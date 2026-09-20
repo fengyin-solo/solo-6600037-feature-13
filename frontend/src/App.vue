@@ -32,9 +32,17 @@
             <label class="text-xs text-slate-500">缝间距 D = {{ store.params.slitSeparation }} μm</label>
             <input type="range" min="50" max="500" step="10" v-model.number="store.params.slitSeparation" @input="store.compute" class="w-full accent-green-500" />
           </div>
-          <div>
+          <div v-if="store.currentExperiment !== 'newton'">
             <label class="text-xs text-slate-500">屏幕距离 L = {{ store.params.screenDistance }} mm</label>
             <input type="range" min="100" max="2000" step="50" v-model.number="store.params.screenDistance" @input="store.compute" class="w-full accent-orange-500" />
+          </div>
+          <div v-if="store.currentExperiment === 'newton'">
+            <label class="text-xs text-slate-500">曲率半径 R = {{ store.params.radius.toFixed(2) }} m</label>
+            <input type="range" min="0.1" max="3" step="0.05" v-model.number="store.params.radius" @input="store.compute" class="w-full accent-orange-500" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">条纹级次 k = {{ store.params.order }}</label>
+            <input type="range" min="0" max="12" step="1" v-model.number="store.params.order" @input="store.compute" class="w-full accent-pink-500" />
           </div>
         </div>
         <div class="bg-slate-800 rounded-lg p-4 border border-slate-700 text-sm">
@@ -44,18 +52,19 @@
               <div class="text-cyan-400 font-bold">双缝干涉</div>
               <div>亮纹: y = kλL/d (k=0,±1,±2...)</div>
               <div>条纹间距: Δy = λL/d</div>
-              <div class="text-yellow-400 mt-1">Δy = {{ store.result.fringe?.toFixed(2) }} mm</div>
+              <div class="text-yellow-400 mt-1">Δy = {{ store.theoryResult.fringeSpacing?.toFixed(2) }} mm</div>
             </div>
             <div v-if="store.currentExperiment === 'single'" class="bg-slate-900 rounded p-2">
               <div class="text-cyan-400 font-bold">单缝衍射</div>
               <div>暗纹: a·sinθ = kλ</div>
               <div>中央亮纹宽: 2λL/a</div>
-              <div class="text-yellow-400 mt-1">中央宽 = {{ store.result.centralWidth?.toFixed(2) }} mm</div>
+              <div class="text-yellow-400 mt-1">中央宽 = {{ store.theoryResult.centralWidth?.toFixed(2) }} mm</div>
             </div>
             <div v-if="store.currentExperiment === 'newton'" class="bg-slate-900 rounded p-2">
               <div class="text-cyan-400 font-bold">牛顿环</div>
-              <div>暗环半径: r = √(nλR)</div>
+              <div>暗环半径: r = √(kλR)</div>
               <div>R: 曲率半径</div>
+              <div class="text-yellow-400 mt-1">rₖ = {{ store.theoryResult.darkRing?.toFixed(2) }} mm (k={{ store.params.order }})</div>
             </div>
           </div>
         </div>
@@ -75,12 +84,16 @@
         </div>
       </div>
     </div>
+    <div class="px-4 pb-6">
+      <TheoryCompare />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useOpticsStore } from './store/optics'
+import TheoryCompare from './components/TheoryCompare.vue'
 
 const store = useOpticsStore()
 const patternRef = ref<HTMLCanvasElement | null>(null)
@@ -181,6 +194,7 @@ function drawHeatmap() {
 
 function renderAll() { drawPattern(); drawIntensity(); drawHeatmap() }
 
-onMounted(() => { store.compute(); setTimeout(renderAll, 100) })
+onMounted(() => { store.compute(); store.ensureBaseline(); setTimeout(renderAll, 100) })
 watch(() => store.intensityData, () => renderAll(), { deep: true })
+watch(() => store.currentExperiment, () => setTimeout(renderAll, 50))
 </script>
