@@ -73,6 +73,7 @@
           <h3 class="text-sm font-bold text-slate-400 mb-3">2D 热力图</h3>
           <canvas ref="heatmapRef" class="w-full rounded" style="height: 200px; background: black;"></canvas>
         </div>
+        <TheoryCompare />
       </div>
     </div>
   </div>
@@ -81,6 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useOpticsStore } from './store/optics'
+import TheoryCompare from './components/TheoryCompare.vue'
 
 const store = useOpticsStore()
 const patternRef = ref<HTMLCanvasElement | null>(null)
